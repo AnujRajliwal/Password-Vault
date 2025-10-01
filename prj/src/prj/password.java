@@ -3,13 +3,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+
 public class password{
     private static final String DB_URL = "jdbc:sqlite:password_vault.db";
     private static String currentUser;
+
     public static void main(String[] args) {
         createTables();
         SwingUtilities.invokeLater(() -> new LoginFrame());
     }
+
     private static void createTables() {
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
@@ -30,6 +33,7 @@ public class password{
             e.printStackTrace();
         }
     }
+
     public static boolean registerUser(String user, String pass) {
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = "INSERT INTO users(username, password) VALUES(?,?)";
@@ -42,6 +46,7 @@ public class password{
             return false;
         }
     }
+
     public static boolean loginUser(String user, String pass) {
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = "SELECT * FROM users WHERE username=? AND password=?";
@@ -58,6 +63,7 @@ public class password{
         }
         return false;
     }
+
     public static void saveVault(String platform, String siteUser, String sitePass) {
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             String sql = "INSERT INTO vault(username, platform, siteUser, sitePass) VALUES(?,?,?,?)";
@@ -71,6 +77,7 @@ public class password{
             e.printStackTrace();
         }
     }
+
     public static String loadVault() {
         StringBuilder sb = new StringBuilder();
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
@@ -90,6 +97,7 @@ public class password{
         return sb.toString();
     }
 }
+
 class LoginFrame extends JFrame {
     public LoginFrame() {
         setTitle("Login");
@@ -199,6 +207,11 @@ class VaultFrame extends JFrame {
         display = new JTextArea();
         display.setEditable(false);
 
+        // Add scroll pane to display
+        JScrollPane scrollPane = new JScrollPane(display);
+        scrollPane.setBounds(20, 190, 340, 200);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
         labelPlatform.setBounds(20, 20, 100, 25);
         textPlatform.setBounds(140, 20, 200, 25);
         labelUser.setBounds(20, 60, 100, 25);
@@ -207,17 +220,21 @@ class VaultFrame extends JFrame {
         textPass.setBounds(140, 100, 200, 25);
         saveBtn.setBounds(40, 140, 120, 30);
         showBtn.setBounds(200, 140, 120, 30);
-        display.setBounds(20, 190, 340, 200);
 
         add(labelPlatform); add(textPlatform);
         add(labelUser); add(textUser);
         add(labelPass); add(textPass);
-        add(saveBtn); add(showBtn); add(display);
+        add(saveBtn); add(showBtn);
+        add(scrollPane); // Add scroll pane instead of JTextArea
 
         saveBtn.addActionListener(e -> {
-            password.saveVault(textPlatform.getText(), textUser.getText(), new String(textPass.getPassword()));
-            JOptionPane.showMessageDialog(this, "Saved!");
-            textPlatform.setText(""); textUser.setText(""); textPass.setText("");
+            if (!textPlatform.getText().isEmpty() && !textUser.getText().isEmpty() && textPass.getPassword().length > 0) {
+                password.saveVault(textPlatform.getText(), textUser.getText(), new String(textPass.getPassword()));
+                JOptionPane.showMessageDialog(this, "Saved!");
+                textPlatform.setText(""); textUser.setText(""); textPass.setText("");
+            } else {
+                JOptionPane.showMessageDialog(this, "Please fill all fields!");
+            }
         });
 
         showBtn.addActionListener(e -> {
